@@ -177,7 +177,7 @@ func (query *Query) SendQuery(ctx context.Context, opcode QueryType) (response [
 	waitResult := make(chan resultData, 1)
 
 	go func() {
-		response := make([]byte, 2048)
+		response := make([]byte, 4096)
 
 		if opcode == IsOmp {
 			conn.SetReadDeadline(time.Now().Add(1 * time.Second))
