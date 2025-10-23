@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/binary"
+	"fmt"
 	"math/rand"
 	"net"
 	"strings"
@@ -12,6 +13,18 @@ import (
 	"github.com/pkg/errors"
 	"github.com/saintfish/chardet"
 	"golang.org/x/text/encoding/htmlindex"
+)
+
+// Validation constants for open.mp/SA:MP server data limits
+const (
+	MaxHostnameLength = 255
+	MaxGamemodeLength = 39
+	MaxLanguageLength = 39
+	MaxDiscordLinkLen = 50
+	MaxBannerURLLen   = 160
+	MaxLogoURLLen     = 160
+	MaxPlayerCount    = 1000
+	MaxRuleCount      = 20
 )
 
 // Server contains all the information retreived from the server query API.
@@ -263,17 +276,29 @@ func (query *Query) GetInfo(ctx context.Context, attemptDecode bool) (server Ser
 	hostnameLen := int(binary.LittleEndian.Uint16(response[ptr : ptr+4]))
 	ptr += 4
 
+	if hostnameLen > MaxHostnameLength {
+		return server, errors.New(fmt.Sprintf("hostname length (%d) is exceeding the limit (%d) for server %s:%d", hostnameLen, MaxHostnameLength, query.addr.IP, query.addr.Port))
+	}
+
 	hostnameRaw := response[ptr : ptr+hostnameLen]
 	ptr += hostnameLen
 
 	gamemodeLen := int(binary.LittleEndian.Uint16(response[ptr : ptr+4]))
 	ptr += 4
 
+	if gamemodeLen > MaxGamemodeLength {
+		return server, errors.New(fmt.Sprintf("gamemode length (%d) is exceeding the limit (%d) for server %s:%d", gamemodeLen, MaxGamemodeLength, query.addr.IP, query.addr.Port))
+	}
+
 	gamemodeRaw := response[ptr : ptr+gamemodeLen]
 	ptr += gamemodeLen
 
 	languageLen := int(binary.LittleEndian.Uint16(response[ptr : ptr+4]))
 	ptr += 4
+
+	if languageLen > MaxLanguageLength {
+		return server, errors.New(fmt.Sprintf("language length (%d) is exceeding the limit (%d) for server %s:%d", languageLen, MaxLanguageLength, query.addr.IP, query.addr.Port))
+	}
 
 	languageRaw := response[ptr : ptr+languageLen]
 
@@ -325,6 +350,10 @@ func (query *Query) GetRules(ctx context.Context) (rules map[string]string, err 
 	ptr := 11
 	amount := binary.LittleEndian.Uint16(response[ptr : ptr+2])
 	ptr += 2
+
+	if amount > MaxRuleCount {
+		return rules, errors.New(fmt.Sprintf("rule count (%d) is exceeding the limit (%d) for server %s:%d", amount, MaxRuleCount, query.addr.IP, query.addr.Port))
+	}
 
 	for i := uint16(0); i < amount && ptr < responseLen; i++ {
 		if ptr >= responseLen {
