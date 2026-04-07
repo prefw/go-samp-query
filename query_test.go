@@ -4,9 +4,12 @@ import (
 	"context"
 	"fmt"
 	"testing"
+
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"golang.org/x/text/encoding/charmap"
+	"golang.org/x/text/transform"
 )
 
 func TestGetServerInfo(t *testing.T) {
@@ -58,6 +61,37 @@ func TestQuery_GetPing(t *testing.T) {
 			gotPing, err := query.GetPing(context.Background())
 			assert.NotZero(t, gotPing)
 			fmt.Print(gotPing)
+		})
+	}
+}
+
+var (
+	encoder = charmap.Windows1251.NewEncoder()
+)
+
+func encode(t *testing.T, s string) []byte {
+	out, _, err := transform.Bytes(encoder, []byte(s))
+	if err != nil {
+		t.Fatalf("failed to encode string %q: %v", s, err)
+	}
+	return out
+}
+
+func TestAttemptDecodeANSI(t *testing.T) {
+	tests := []struct {
+		text     []byte
+		expected string
+	}{
+		{text: encode(t, "hello world"), expected: "hello world"},
+		{text: encode(t, "[0.3.7] РУССКИЙ ДРИФТ СЕРВЕР ЗАХОДИ"), expected: "[0.3.7] РУССКИЙ ДРИФТ СЕРВЕР ЗАХОДИ"},
+		{text: encode(t, "RAGE RUSSIA | Москва"), expected: "RAGE RUSSIA | Москва"},
+	}
+	for i, tt := range tests {
+		t.Run(fmt.Sprint(i), func(t *testing.T) {
+			decoded := AttemptDecodeANSI(tt.text)
+			if decoded != tt.expected {
+				t.Errorf("decoded = %q; want %q", decoded, tt.expected)
+			}
 		})
 	}
 }
