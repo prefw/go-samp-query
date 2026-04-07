@@ -240,7 +240,7 @@ func (query *Query) GetPing(ctx context.Context) (ping time.Duration, err error)
 	if err != nil {
 		return 0, err
 	}
-	ping = time.Now().Sub(t)
+	ping = time.Since(t)
 
 	return
 }
