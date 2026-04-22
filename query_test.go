@@ -19,7 +19,7 @@ func TestGetServerInfo(t *testing.T) {
 		args    args
 		wantErr string
 	}{
-		{"valid", args{"server.ls-rp.com:7777", false}, ""},
+		{"valid", args{"178.32.234.18:7777", false}, ""},
 		{"valid", args{"46.174.54.184:7777", false}, ""},
 		{"invalid", args{"18.251.83.150:80", false}, "socket read timed out"},
 		{"invalid", args{"not a valid url", false}, "failed to resolve host: address not a valid url: missing port in address"},
@@ -47,7 +47,7 @@ func TestQuery_GetPing(t *testing.T) {
 	tests := []struct {
 		addr string
 	}{
-		{"server.ls-rp.com:7777"},
+		{"178.32.234.18:7777"},
 	}
 	for i, tt := range tests {
 		t.Run(fmt.Sprint(i), func(t *testing.T) {
